@@ -32,6 +32,7 @@ flask-file-server/
 ├── app.py
 ├── config.py
 ├── requirements.txt
+├── Dockerfile
 ├── files/
 ├── .gitignore
 ├── LICENSE
@@ -216,12 +217,47 @@ curl http://localhost:5000/api/v1/health
 
 ---
 
+## Docker Support
+
+This project includes Docker support for easy deployment and containerization.
+
+### Building the Docker Image
+
+To build the Docker image, run:
+
+```
+docker build -t flask-file-server .
+```
+
+### Running with Docker
+
+To run the application in a Docker container:
+
+```
+docker run -p 5000:5000 flask-file-server
+```
+
+### Running with Custom Configuration
+
+You can customize the file directory and port using environment variables:
+
+```
+docker run -p 5000:5000 -e FILE_DIR=/app/custom-files -e PORT=5000 flask-file-server
+```
+
+### Mounting a Volume
+
+To mount a local directory for file sharing:
+
+```
+docker run -p 5000:5000 -v /path/to/local/files:/app/files flask-file-server
+```
+
 ## Future Improvements
 
 * File upload endpoint
 * API key authentication
 * Rate limiting
-* Docker support
 
 ---
 
