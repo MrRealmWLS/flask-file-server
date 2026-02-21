@@ -25,8 +25,20 @@ def list_files():
         return api_response("success", data={"files": files})
     except Exception:
         return api_response("error", "Could not retrieve files", status_code=500)
-
-
+@app.route('/api/v1/files', methods=['POST'])
+def upload_file():
+    logging.info("File upload requested")
+    if 'file' not in request.files:
+        return api_response("error", "No file part in the request", status_code=400)
+    
+    file = request.files['file']
+    if file.filename == '':
+        return api_response("error", "No selected file", status_code=400)
+    
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(FILE_DIR, filename))
+        return api_response("success", f"File '{filename}' uploaded successfully")
 @app.route('/api/v1/files/<filename>', methods=['GET'])
 def download_file(filename):
     logging.info(f"Download requested: {filename}")

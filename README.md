@@ -15,6 +15,7 @@ It allows secure listing and downloading of files from a configured directory.
 - Versioned REST API (`/api/v1`)
 - Secure file downloads
 - File listing endpoint
+- File upload endpoint
 - Consistent JSON responses
 - Health check endpoint
 - Environment-based configuration
@@ -187,6 +188,35 @@ Returns the requested file as a downloadable attachment.
 
 ---
 
+### Upload File
+
+```
+POST /api/v1/files
+```
+
+Upload a file to the server. The file must be sent as form data with the key `file`.
+
+Request:
+
+```bash
+curl -X POST http://localhost:5000/api/v1/files \
+  -F "file=@path/to/your/file.txt"
+```
+
+Response (Success):
+
+```json
+{
+  "status": "success",
+  "message": "File uploaded successfully",
+  "data": {
+    "filename": "file.txt",
+    "size": 1024
+  }
+}
+```
+---
+
 ## cURL Examples
 
 List files:
@@ -205,6 +235,12 @@ Health check:
 
 ```
 curl http://localhost:5000/api/v1/health
+```
+
+Upload file:
+
+```
+curl -X POST http://localhost:5000/api/v1/files -F "file=@path/to/your/file.txt"
 ```
 
 ---
@@ -255,7 +291,6 @@ docker run -p 5000:5000 -v /path/to/local/files:/app/files flask-file-server
 
 ## Future Improvements
 
-* File upload endpoint
 * API key authentication
 * Rate limiting
 
