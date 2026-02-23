@@ -19,6 +19,7 @@ It allows secure listing and downloading of files from a configured directory.
 - Consistent JSON responses
 - Health check endpoint
 - Environment-based configuration
+- API key authentication
 - Structured logging
 - Clean project structure
 
@@ -98,6 +99,7 @@ import os
 class Config:
     FILE_DIR = os.getenv("FILE_DIR", "files")
     PORT = int(os.getenv("PORT", 5000))
+    API_KEY = "supersecret123"
 ````
 
 You can also configure using environment variables:
@@ -158,6 +160,12 @@ Response:
 GET /api/v1/files
 ```
 
+Headers:
+
+```
+X-API-KEY: supersecret123
+```
+
 Response:
 
 ```json
@@ -178,6 +186,12 @@ Response:
 GET /api/v1/files/<filename>
 ```
 
+Headers:
+
+```
+X-API-KEY: supersecret123
+```
+
 Example:
 
 ```
@@ -194,13 +208,20 @@ Returns the requested file as a downloadable attachment.
 POST /api/v1/files
 ```
 
+Headers:
+
+```
+X-API-KEY: supersecret123
+```
+
 Upload a file to the server. The file must be sent as form data with the key `file`.
 
 Request:
 
 ```bash
 curl -X POST http://localhost:5000/api/v1/files \
-  -F "file=@path/to/your/file.txt"
+  -F "file=@path/to/your/file.txt" \
+  -H "X-API-KEY: supersecret123"
 ```
 
 Response (Success):
@@ -208,27 +229,44 @@ Response (Success):
 ```json
 {
   "status": "success",
-  "message": "File uploaded successfully",
-  "data": {
-    "filename": "file.txt",
-    "size": 1024
-  }
+  "message": "File 'file.txt' uploaded successfully",
+  "data": null
 }
 ```
----
 
+Response (Error - No file provided):
+
+```json
+{
+  "status": "error",
+  "message": "No file part in the request",
+  "data": null
+}
+```
+
+Response (Error - No selected file):
+
+```json
+{
+  "status": "error",
+  "message": "No selected file",
+  "data": null
+}
+```
+
+---
 ## cURL Examples
 
 List files:
 
 ```
-curl http://localhost:5000/api/v1/files
+curl -H "X-API-KEY: supersecret123" http://localhost:5000/api/v1/files
 ```
 
 Download file:
 
 ```
-curl -O http://localhost:5000/api/v1/files/example.pdf
+curl -H "X-API-KEY: supersecret123" -O http://localhost:5000/api/v1/files/example.pdf
 ```
 
 Health check:
@@ -240,13 +278,14 @@ curl http://localhost:5000/api/v1/health
 Upload file:
 
 ```
-curl -X POST http://localhost:5000/api/v1/files -F "file=@path/to/your/file.txt"
+curl -X POST http://localhost:5000/api/v1/files -F "file=@path/to/your/file.txt" -H "X-API-KEY: supersecret123"
 ```
 
 ---
 
 ## Security
 
+* API key authentication required for all endpoints
 * Filenames are sanitized using `secure_filename`
 * Directory traversal is prevented
 * Only files inside the configured directory can be accessed
@@ -291,7 +330,6 @@ docker run -p 5000:5000 -v /path/to/local/files:/app/files flask-file-server
 
 ## Future Improvements
 
-* API key authentication
 * Rate limiting
 
 ---
