@@ -1,7 +1,8 @@
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 from werkzeug.utils import secure_filename
 import os
 import logging
+from functools import wraps
 from config import Config
 
 app = Flask(__name__)
@@ -16,9 +17,23 @@ def api_response(status, message=None, data=None, status_code=200):
         "message": message,
         "data": data
     }), status_code
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        key = request.headers.get("X-API-KEY")
 
+        if not key:
+            return api_response("error", "API key missing", status_code=401)
+
+        if key != Config.API_KEY:
+            return api_response("error", "Invalid API key", status_code=403)
+
+        return f(*args, **kwargs)
+
+    return decorated
 
 @app.route('/api/v1/files', methods=['GET'])
+@require_api_key
 def list_files():
     try:
         files = os.listdir(FILE_DIR)
@@ -26,6 +41,7 @@ def list_files():
     except Exception:
         return api_response("error", "Could not retrieve files", status_code=500)
 @app.route('/api/v1/files', methods=['POST'])
+@require_api_key
 def upload_file():
     logging.info("File upload requested")
     if 'file' not in request.files:
@@ -40,6 +56,7 @@ def upload_file():
         file.save(os.path.join(FILE_DIR, filename))
         return api_response("success", f"File '{filename}' uploaded successfully")
 @app.route('/api/v1/files/<filename>', methods=['GET'])
+@require_api_key
 def download_file(filename):
     logging.info(f"Download requested: {filename}")
     filename = secure_filename(filename)
