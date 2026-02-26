@@ -21,7 +21,8 @@ It allows secure listing and downloading of files from a configured directory.
 - Environment-based configuration
 - API key authentication
 - Structured logging
-- Clean project structure
+- Clean project structure`
+- Rate Limit
 
 ---
 
@@ -327,11 +328,6 @@ To mount a local directory for file sharing:
 ```
 docker run -p 5000:5000 -v /path/to/local/files:/app/files flask-file-server
 ```
-
-## Future Improvements
-
-* Rate limiting
-
 ---
 
 ## License
