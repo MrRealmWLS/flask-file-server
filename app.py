@@ -2,6 +2,7 @@ from flask import Flask, send_from_directory, jsonify, request
 from werkzeug.utils import secure_filename
 import os
 import logging
+from collections import defaultdict
 from functools import wraps
 from config import Config
 
@@ -9,7 +10,29 @@ app = Flask(__name__)
 
 FILE_DIR = Config.FILE_DIR
 logging.basicConfig(level=logging.INFO)
+_request_log = defaultdict(list)
+RATE_LIMIT = 60
+RATE_WINDOW = 60
+def rate_limit(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        ip = request.remote_addr
+        now = time.time()
+        window_start = now - RATE_WINDOW
 
+        _request_log[ip] = [t for t in _request_log[ip] if t > window_start]
+
+        if len(_request_log[ip]) >= RATE_LIMIT:
+            retry_after = int(_request_log[ip][0] - window_start)
+            return api_response(
+                "error",
+                f"Rate limit exceeded. Try again in {retry_after}s.",
+                status_code=429
+            )
+
+        _request_log[ip].append(now)
+        return f(*args, **kwargs)
+    return decorated
 
 def api_response(status, message=None, data=None, status_code=200):
     return jsonify({
@@ -34,6 +57,7 @@ def require_api_key(f):
 
 @app.route('/api/v1/files', methods=['GET'])
 @require_api_key
+@rate_limit
 def list_files():
     try:
         files = os.listdir(FILE_DIR)
@@ -42,6 +66,7 @@ def list_files():
         return api_response("error", "Could not retrieve files", status_code=500)
 @app.route('/api/v1/files', methods=['POST'])
 @require_api_key
+@rate_limit
 def upload_file():
     logging.info("File upload requested")
     if 'file' not in request.files:
@@ -57,6 +82,7 @@ def upload_file():
         return api_response("success", f"File '{filename}' uploaded successfully")
 @app.route('/api/v1/files/<filename>', methods=['GET'])
 @require_api_key
+@rate_limit
 def download_file(filename):
     logging.info(f"Download requested: {filename}")
     filename = secure_filename(filename)
